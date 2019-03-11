@@ -21,11 +21,6 @@ n UInt64,
 peer_descr String,
 actions Array(String),
 suppress_for UInt32,
-dropped Enum8('F'=0, 'T'=1),
-country_code FixedString(2),
-region String,
-city String,
-latitude Float32,
-longitude Float32
+dropped Enum8('F'=0, 'T'=1)
 )
 ENGINE = MergeTree(day,sipHash64(uid), (day,sipHash64(uid), uid), 8192);
