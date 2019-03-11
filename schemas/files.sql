@@ -19,11 +19,7 @@ create table files (
   overflow_bytes UInt16,
   timedout Enum8('F'=0, 'T'=1),
   parent_fuid Nullable(String),
-  md5 String,
-  sha1 String,
   sha256 Nullable(String),
-  extracted Nullable(String),
-  extracted_cutoff Nullable(Enum8('F'=0, 'T'=1)),
-  extracted_size Nullable(UInt32)
+  extracted Nullable(String)
 )
 ENGINE = MergeTree(day,cityHash64(fuid), (day,cityHash64(fuid), fuid), 8192);
