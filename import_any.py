@@ -9,7 +9,7 @@ from json import dumps
 from argparse import ArgumentParser
 fromtimestamp = datetime.datetime.fromtimestamp
 
-import anydbm
+import dbm
 
 def chunk(it, slice=50):
     """Generate sublists from an iterator
@@ -43,18 +43,18 @@ class Seen:
         self.filename = filename
 
     def has_seen(self, key):
-        d = anydbm.open(self.filename, 'c')
+        d = dbm.open(self.filename, 'c')
         res = str(key) in d
         d.close()
         return res
 
     def mark_seen(self, key):
-        d = anydbm.open(self.filename, 'c')
+        d = dbm.open(self.filename, 'c')
         d[str(key)] = '1'
         d.close()
 
     def remove(self, key):
-        d = anydbm.open(self.filename, 'c')
+        d = dbm.open(self.filename, 'c')
         del d[str(key)]
         d.close()
 
@@ -67,7 +67,7 @@ def reader(f):
         k,v = line[1:].split(None, 1)
         headers[k] = v
 
-    sep = headers['separator'].decode("string-escape")
+    sep = headers['separator'].encode().decode("unicode-escape")
 
     for k,v in headers.items():
         if sep in v:
@@ -138,13 +138,13 @@ def get_data(filename, cmd):
 
 done = Seen("clickhouse.imported")
 
-def do_import(filename, table, endpoint, cmd):
+def do_import(filename, table, endpoint, cmd, force):
     query="INSERT INTO {} FORMAT JSONEachRow".format(table)
     data = get_data(filename, cmd)
-    print filename,
+    print(filename, end="")
     for i, block in enumerate(chunk(data, 50000)):
         block_id = '{}_{}'.format(filename, i)
-        if done.has_seen(block_id):
+        if not force and done.has_seen(block_id):
             sys.stdout.write("#")
             continue
         blob = "\n".join(dumps(d) for d in block) + "\n"
@@ -153,7 +153,7 @@ def do_import(filename, table, endpoint, cmd):
         done.mark_seen(block_id)
         sys.stdout.write("#")
         sys.stdout.flush()
-    print
+    print("")
 
 def get_arguments():
     parser = ArgumentParser(description='This script allows to import Bro logs'
@@ -175,9 +175,9 @@ def main():
 
     for f in args.files:
         if not args.force and done.has_seen(f):
-            print f, 'already done'
+            print(f + ' already done')
             continue
-        do_import(f, args.table, args.endpoint, args.cmd)
+        do_import(f, args.table, args.endpoint, args.cmd, args.force)
         done.mark_seen(f)
 
 if __name__ == "__main__":
