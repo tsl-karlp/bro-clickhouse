@@ -23,4 +23,7 @@ result = requests.post(
     "http://localhost:8123",
     params={"query": query},
 )
-result.raise_for_status()
+try:
+    result.raise_for_status()
+except requests.exceptions.HTTPError as exc:
+    raise Exception(result.text) from exc
